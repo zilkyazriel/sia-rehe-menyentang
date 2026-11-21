@@ -97,12 +97,6 @@ export const SetupView: React.FC<SetupViewProps> = ({ onStart }) => {
     }
   }
 
-  const estimatedMinutes = Math.max(totalMatches * 15, 15);
-  const estHours = Math.floor(estimatedMinutes / 60);
-  const estMins = estimatedMinutes % 60;
-  const durationText =
-    estHours > 0 ? TEKS.setup.jamMenit(estHours, estMins) : TEKS.setup.menit(estMins);
-
   const isValidToStart = format === 'group-stage-knockout' ? n >= 4 : n >= 3;
 
   const handleStartTournament = () => {
@@ -319,8 +313,8 @@ export const SetupView: React.FC<SetupViewProps> = ({ onStart }) => {
 
       {/* 3. Summary & CTA Card */}
       <div className="p-4 rounded-2xl border border-slate-200/90 dark:border-white/10 bg-white dark:bg-[#121c17] shadow-sm space-y-4">
-        <div className="grid grid-cols-3 gap-2 text-center">
-          <div className="p-3 rounded-xl border border-slate-100 dark:border-white/5 bg-slate-50/70 dark:bg-white/5">
+        <div className="grid grid-cols-2 gap-3 text-center">
+          <div className="p-3.5 rounded-xl border border-slate-100 dark:border-white/5 bg-slate-50/70 dark:bg-white/5">
             <div className="text-[11px] font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider">
               {TEKS.setup.ringkasanPemain}
             </div>
@@ -328,20 +322,12 @@ export const SetupView: React.FC<SetupViewProps> = ({ onStart }) => {
               {n}
             </div>
           </div>
-          <div className="p-3 rounded-xl border border-slate-100 dark:border-white/5 bg-slate-50/70 dark:bg-white/5">
+          <div className="p-3.5 rounded-xl border border-slate-100 dark:border-white/5 bg-slate-50/70 dark:bg-white/5">
             <div className="text-[11px] font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider">
               {TEKS.setup.ringkasanMatch}
             </div>
             <div className="font-scoreboard text-2xl font-bold text-emerald-600 dark:text-emerald-400 mt-0.5">
               {totalMatches}
-            </div>
-          </div>
-          <div className="p-3 rounded-xl border border-slate-100 dark:border-white/5 bg-slate-50/70 dark:bg-white/5">
-            <div className="text-[11px] font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider">
-              {TEKS.setup.ringkasanDurasi}
-            </div>
-            <div className="font-scoreboard text-2xl font-bold text-slate-700 dark:text-slate-300 mt-0.5">
-              {durationText}
             </div>
           </div>
         </div>
