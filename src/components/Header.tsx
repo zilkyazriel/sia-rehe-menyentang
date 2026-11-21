@@ -1,5 +1,5 @@
 import React from 'react';
-import { Undo2, RotateCcw, Sun, Moon } from 'lucide-react';
+import { Undo2, RotateCcw, Sun, Moon, Share2 } from 'lucide-react';
 import type { TournamentState } from '../types/tournament';
 import { TEKS } from '../lib/teks';
 
@@ -12,6 +12,7 @@ interface HeaderProps {
   onUndo: () => void;
   canUndo: boolean;
   onReset: () => void;
+  onOpenImportExport?: () => void;
 }
 
 export const Header: React.FC<HeaderProps> = ({
@@ -23,6 +24,7 @@ export const Header: React.FC<HeaderProps> = ({
   onUndo,
   canUndo,
   onReset,
+  onOpenImportExport,
 }) => {
   const activeMatches = tournament?.matches.filter(m => !m.isBye) || [];
   const completedCount = activeMatches.filter(m => m.status === 'completed').length;
@@ -97,6 +99,19 @@ export const Header: React.FC<HeaderProps> = ({
                 </>
               )}
             </button>
+
+            {onOpenImportExport && (
+              <button
+                type="button"
+                onClick={onOpenImportExport}
+                title="Salin & Impor Data"
+                aria-label="Salin dan Impor Data"
+                className="btn-pressable min-h-10 min-w-10 sm:min-h-11 px-2.5 sm:px-3 text-xs font-semibold rounded-lg border border-slate-200 dark:border-white/10 bg-white dark:bg-white/5 hover:bg-slate-50 dark:hover:bg-white/10 text-slate-700 dark:text-slate-300 transition-colors flex items-center justify-center gap-1.5"
+              >
+                <Share2 className="w-4 h-4 text-emerald-600 dark:text-emerald-400 shrink-0" />
+                <span className="hidden md:inline">Data</span>
+              </button>
+            )}
           </div>
         </div>
 

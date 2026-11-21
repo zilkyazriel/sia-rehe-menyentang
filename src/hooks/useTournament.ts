@@ -147,6 +147,10 @@ export function useTournament() {
     saveTournamentToStorage(null);
   }, []);
 
+  const importTournamentState = useCallback((newState: TournamentState) => {
+    setTournament(newState);
+  }, []);
+
   return {
     tournament,
     startTournament,
@@ -154,6 +158,7 @@ export function useTournament() {
     undoLastAction,
     editMatchResult,
     resetTournament,
+    importTournamentState,
     canUndo: Boolean(tournament && tournament.history.length > 0),
   };
 }

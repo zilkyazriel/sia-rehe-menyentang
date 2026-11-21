@@ -7,6 +7,7 @@ import { StandingsView } from './components/StandingsView';
 import { BracketView } from './components/BracketView';
 import { ChampionModal } from './components/ChampionModal';
 import { ConfirmDialog } from './components/ConfirmDialog';
+import { ImportExportModal } from './components/ImportExportModal';
 import { Toast, type ToastMessage } from './components/Toast';
 import { getStoredTheme, saveStoredTheme } from './utils/storage';
 import { TEKS } from './lib/teks';
@@ -15,7 +16,9 @@ export function App() {
   const [theme, setTheme] = useState<'dark' | 'light'>(() => getStoredTheme());
   const [activeTab, setActiveTab] = useState<'matches' | 'standings' | 'bracket'>('matches');
   const [isResetConfirmOpen, setIsResetConfirmOpen] = useState(false);
+  const [isUndoConfirmOpen, setIsUndoConfirmOpen] = useState(false);
   const [isChampionModalOpen, setIsChampionModalOpen] = useState(false);
+  const [isImportExportOpen, setIsImportExportOpen] = useState(false);
   const [toasts, setToasts] = useState<ToastMessage[]>([]);
 
   const {
@@ -25,6 +28,7 @@ export function App() {
     undoLastAction,
     editMatchResult,
     resetTournament,
+    importTournamentState,
     canUndo,
   } = useTournament();
 
@@ -72,11 +76,16 @@ export function App() {
     showToast(TEKS.toast.dikoreksi, 'info');
   };
 
-  const handleUndo = () => {
+  const handleRequestUndo = () => {
+    setIsUndoConfirmOpen(true);
+  };
+
+  const handleConfirmUndo = () => {
     const ok = undoLastAction();
     if (ok) {
       showToast(TEKS.toast.dibatalkan, 'warning');
     }
+    setIsUndoConfirmOpen(false);
   };
 
   const handleConfirmReset = () => {
@@ -108,9 +117,10 @@ export function App() {
         tournament={tournament}
         activeTab={activeTab}
         onChangeTab={setActiveTab}
-        onUndo={handleUndo}
+        onUndo={handleRequestUndo}
         canUndo={canUndo}
         onReset={() => setIsResetConfirmOpen(true)}
+        onOpenImportExport={() => setIsImportExportOpen(true)}
       />
 
       <main className="flex-1 pb-12 pt-1">
@@ -126,8 +136,9 @@ export function App() {
                 currentMatchIndex={tournament.currentMatchIndex}
                 onRecordWinner={handleRecordWinner}
                 onEditResult={handleEditResult}
-                onUndo={handleUndo}
+                onUndo={handleRequestUndo}
                 canUndo={canUndo}
+                onOpenChampionModal={() => setIsChampionModalOpen(true)}
               />
             )}
 
@@ -137,6 +148,7 @@ export function App() {
                 format={tournament.config.format}
                 matches={tournament.matches}
                 players={tournament.config.players}
+                onShowToast={showToast}
               />
             )}
 
@@ -145,11 +157,23 @@ export function App() {
               <StandingsView
                 players={tournament.config.players}
                 matches={tournament.matches}
+                onShowToast={showToast}
               />
             )}
           </div>
         )}
       </main>
+
+      <ConfirmDialog
+        isOpen={isUndoConfirmOpen}
+        title={TEKS.dialog.undoJudul}
+        message={TEKS.dialog.undoPesan}
+        confirmText={TEKS.dialog.undoConfirm}
+        cancelText={TEKS.dialog.batal}
+        confirmVariant="amber"
+        onConfirm={handleConfirmUndo}
+        onCancel={() => setIsUndoConfirmOpen(false)}
+      />
 
       <ConfirmDialog
         isOpen={isResetConfirmOpen}
@@ -160,6 +184,14 @@ export function App() {
         confirmVariant="danger"
         onConfirm={handleConfirmReset}
         onCancel={() => setIsResetConfirmOpen(false)}
+      />
+
+      <ImportExportModal
+        isOpen={isImportExportOpen}
+        onClose={() => setIsImportExportOpen(false)}
+        tournament={tournament}
+        onImportTournament={importTournamentState}
+        onShowToast={showToast}
       />
 
       {tournament && (

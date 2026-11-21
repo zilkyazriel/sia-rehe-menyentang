@@ -1,14 +1,17 @@
 import React from 'react';
+import { Copy } from 'lucide-react';
 import type { Match, Player } from '../types/tournament';
 import { buildHeadToHeadMatrix, calculateStandings } from '../utils/standings';
+import { copyToClipboard, generateStandingsText, generateHeadToHeadText } from '../utils/share';
 import { TEKS } from '../lib/teks';
 
 interface StandingsViewProps {
   players: Player[];
   matches: Match[];
+  onShowToast?: (msg: string) => void;
 }
 
-export const StandingsView: React.FC<StandingsViewProps> = ({ players, matches }) => {
+export const StandingsView: React.FC<StandingsViewProps> = ({ players, matches, onShowToast }) => {
   const isGroupFormat = matches.some(m => m.bracketType === 'group' && m.groupName);
 
   if (isGroupFormat) {
@@ -33,11 +36,13 @@ export const StandingsView: React.FC<StandingsViewProps> = ({ players, matches }
           title="Klasemen Grup A"
           players={playersA}
           matches={matchesA}
+          onShowToast={onShowToast}
         />
         <SingleStandingsBlock
           title="Klasemen Grup B"
           players={playersB}
           matches={matchesB}
+          onShowToast={onShowToast}
         />
       </div>
     );
@@ -49,6 +54,7 @@ export const StandingsView: React.FC<StandingsViewProps> = ({ players, matches }
         title={TEKS.klasemen.judul}
         players={players}
         matches={matches}
+        onShowToast={onShowToast}
       />
     </div>
   );
@@ -58,23 +64,52 @@ interface SingleStandingsBlockProps {
   title: string;
   players: Player[];
   matches: Match[];
+  onShowToast?: (msg: string) => void;
 }
 
-const SingleStandingsBlock: React.FC<SingleStandingsBlockProps> = ({ title, players, matches }) => {
+const SingleStandingsBlock: React.FC<SingleStandingsBlockProps> = ({ title, players, matches, onShowToast }) => {
   const standings = calculateStandings(players, matches);
   const matrix = buildHeadToHeadMatrix(players, matches);
+
+  const handleCopyStandings = async () => {
+    const text = generateStandingsText(players, matches, title);
+    const ok = await copyToClipboard(text);
+    if (ok && onShowToast) {
+      onShowToast(TEKS.toast.disalin);
+    }
+  };
+
+  const handleCopyH2H = async () => {
+    const text = generateHeadToHeadText(players, matches);
+    const ok = await copyToClipboard(text);
+    if (ok && onShowToast) {
+      onShowToast(TEKS.toast.disalin);
+    }
+  };
 
   return (
     <div className="space-y-5">
       {/* 1. KLASEMEN (MODERN LEAGUE TABLE) */}
       <section aria-label={title} className="space-y-2.5">
         <div className="flex items-center justify-between">
-          <h2 className="font-scoreboard text-xl font-bold tracking-tight text-slate-900 dark:text-white uppercase">
-            {title}
-          </h2>
-          <span className="text-[11px] font-semibold text-emerald-700 dark:text-emerald-400 px-2 py-0.5 rounded-full bg-emerald-50 dark:bg-emerald-950/60 border border-emerald-200/80 dark:border-emerald-800/60">
-            Live
-          </span>
+          <div className="flex items-center gap-2">
+            <h2 className="font-scoreboard text-xl font-bold tracking-tight text-slate-900 dark:text-white uppercase">
+              {title}
+            </h2>
+            <span className="text-[11px] font-semibold text-emerald-700 dark:text-emerald-400 px-2 py-0.5 rounded-full bg-emerald-50 dark:bg-emerald-950/60 border border-emerald-200/80 dark:border-emerald-800/60">
+              Live
+            </span>
+          </div>
+
+          <button
+            type="button"
+            onClick={handleCopyStandings}
+            className="btn-pressable min-h-8 px-2.5 py-1 text-xs font-semibold rounded-lg border border-slate-200 dark:border-white/10 bg-white dark:bg-white/5 hover:bg-slate-50 dark:hover:bg-white/10 text-slate-700 dark:text-slate-300 flex items-center gap-1.5 transition-colors"
+            title="Salin teks klasemen"
+          >
+            <Copy className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400" />
+            <span>Salin</span>
+          </button>
         </div>
 
         <div className="rounded-2xl border border-slate-200/90 dark:border-white/10 bg-white dark:bg-[#121c17] shadow-sm overflow-hidden">
@@ -165,9 +200,20 @@ const SingleStandingsBlock: React.FC<SingleStandingsBlockProps> = ({ title, play
 
       {/* 2. HEAD-TO-HEAD (CROSS TABLE) */}
       <section aria-label="Head-to-head" className="space-y-2.5">
-        <h3 className="font-scoreboard text-base font-bold tracking-tight text-slate-700 dark:text-slate-300 uppercase">
-          {TEKS.klasemen.matriksJudul}
-        </h3>
+        <div className="flex items-center justify-between">
+          <h3 className="font-scoreboard text-base font-bold tracking-tight text-slate-700 dark:text-slate-300 uppercase">
+            {TEKS.klasemen.matriksJudul}
+          </h3>
+          <button
+            type="button"
+            onClick={handleCopyH2H}
+            className="btn-pressable min-h-8 px-2.5 py-1 text-xs font-semibold rounded-lg border border-slate-200 dark:border-white/10 bg-white dark:bg-white/5 hover:bg-slate-50 dark:hover:bg-white/10 text-slate-700 dark:text-slate-300 flex items-center gap-1.5 transition-colors"
+            title="Salin teks head-to-head"
+          >
+            <Copy className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400" />
+            <span>Salin</span>
+          </button>
+        </div>
 
         <div className="rounded-2xl border border-slate-200/90 dark:border-white/10 bg-white dark:bg-[#121c17] shadow-sm overflow-hidden">
           <div className="overflow-x-auto">

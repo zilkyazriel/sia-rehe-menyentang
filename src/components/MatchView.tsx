@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { Trophy, Undo2 } from 'lucide-react';
 import type { Match, Player } from '../types/tournament';
 import { ConfirmDialog } from './ConfirmDialog';
 import { TEKS } from '../lib/teks';
@@ -11,6 +12,7 @@ interface MatchViewProps {
   onEditResult: (matchId: string, newWinnerId: string) => void;
   onUndo: () => void;
   canUndo: boolean;
+  onOpenChampionModal?: () => void;
 }
 
 export const MatchView: React.FC<MatchViewProps> = ({
@@ -19,6 +21,7 @@ export const MatchView: React.FC<MatchViewProps> = ({
   onEditResult,
   onUndo,
   canUndo,
+  onOpenChampionModal,
 }) => {
   const activeQueue = matches.filter(m => !m.isBye);
   const currentMatch = activeQueue.find(m => m.status !== 'completed') || null;
@@ -156,8 +159,42 @@ export const MatchView: React.FC<MatchViewProps> = ({
           )}
         </section>
       ) : (
-        <div className="p-6 border border-slate-200/90 dark:border-white/10 bg-white dark:bg-[#121c17] rounded-2xl text-center text-sm font-bold text-emerald-600 dark:text-emerald-400 shadow-sm">
-          {TEKS.match.semuaSelesai}
+        <div className="p-6 sm:p-8 border-2 border-emerald-500/50 bg-white dark:bg-[#121c17] rounded-3xl text-center space-y-4 shadow-xl shadow-emerald-950/5 dark:shadow-black/40">
+          <div className="inline-flex items-center justify-center w-14 h-14 rounded-2xl bg-amber-500/10 text-amber-500 font-scoreboard text-2xl font-black">
+            1
+          </div>
+          <div>
+            <h3 className="font-scoreboard text-2xl font-bold uppercase tracking-tight text-slate-900 dark:text-white">
+              {TEKS.match.semuaSelesai}
+            </h3>
+            <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">
+              Seluruh pertandingan telah selesai dimainkan.
+            </p>
+          </div>
+
+          {onOpenChampionModal && (
+            <button
+              type="button"
+              onClick={onOpenChampionModal}
+              className="btn-pressable w-full min-h-14 py-3 px-4 rounded-xl bg-emerald-600 hover:bg-emerald-500 active:bg-emerald-700 text-white font-scoreboard text-base font-bold uppercase tracking-wider shadow-lg shadow-emerald-600/30 flex items-center justify-center gap-2"
+            >
+              <Trophy className="w-5 h-5 text-amber-300" />
+              <span>Lihat Hasil Akhir & Juara</span>
+            </button>
+          )}
+
+          {canUndo && (
+            <div className="pt-1 flex justify-center">
+              <button
+                type="button"
+                onClick={onUndo}
+                className="btn-pressable min-h-10 px-3 text-xs font-semibold text-amber-600 dark:text-amber-400 hover:underline flex items-center gap-1.5"
+              >
+                <Undo2 className="w-3.5 h-3.5" />
+                <span>{TEKS.nav.undo} hasil terakhir</span>
+              </button>
+            </div>
+          )}
         </div>
       )}
 

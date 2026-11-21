@@ -28,7 +28,7 @@ function isMatch(obj: unknown): obj is Match {
   );
 }
 
-function isValidTournamentState(data: unknown): data is TournamentState {
+export function isValidTournamentState(data: unknown): data is TournamentState {
   if (typeof data !== 'object' || data === null) return false;
   const s = data as Record<string, unknown>;
 
