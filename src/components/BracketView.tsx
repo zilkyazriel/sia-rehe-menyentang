@@ -1,7 +1,7 @@
-import React, { useState } from 'react';
-import { Copy } from 'lucide-react';
+import React, { useState, useRef } from 'react';
+import { Image as ImageIcon } from 'lucide-react';
 import type { Match, Player, TournamentFormat } from '../types/tournament';
-import { copyToClipboard, generateBracketText } from '../utils/share';
+import { exportElementAsImage } from '../utils/imageExport';
 import { TEKS } from '../lib/teks';
 
 interface BracketViewProps {
@@ -13,16 +13,37 @@ interface BracketViewProps {
 
 export const BracketView: React.FC<BracketViewProps> = ({ format = 'single-elimination', matches, onShowToast }) => {
   const [doubleFilter, setDoubleFilter] = useState<'all' | 'winners' | 'losers'>('all');
+  const [isExporting, setIsExporting] = useState(false);
+  const bracketRef = useRef<HTMLDivElement>(null);
 
   const currentActiveMatch = matches.find(m => !m.isBye && m.status !== 'completed');
 
-  const handleCopyBracket = async () => {
-    const text = generateBracketText(matches, format);
-    const ok = await copyToClipboard(text);
+  const handleExportBracketImage = async () => {
+    if (!bracketRef.current) return;
+    setIsExporting(true);
+    const ok = await exportElementAsImage(
+      bracketRef.current,
+      'sia-rehe-bagan-pertandingan',
+      'Bagan Pertandingan'
+    );
+    setIsExporting(false);
     if (ok && onShowToast) {
-      onShowToast(TEKS.toast.disalin);
+      onShowToast('Gambar bagan berhasil disimpan.');
     }
   };
+
+  const renderExportButton = () => (
+    <button
+      type="button"
+      onClick={handleExportBracketImage}
+      disabled={isExporting}
+      className="no-export btn-pressable min-h-8 px-2.5 py-1 text-xs font-semibold rounded-lg border border-slate-200 dark:border-white/10 bg-white dark:bg-white/5 hover:bg-slate-50 dark:hover:bg-white/10 text-slate-700 dark:text-slate-300 flex items-center gap-1.5 transition-colors shrink-0"
+      title="Simpan bagan sebagai gambar PNG/JPG"
+    >
+      <ImageIcon className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400" />
+      <span>{isExporting ? 'Menyimpan...' : 'Gambar PNG'}</span>
+    </button>
+  );
 
   // 1. FORMAT GUGUR GANDA (DOUBLE ELIMINATION)
   if (format === 'double-elimination') {
@@ -31,7 +52,7 @@ export const BracketView: React.FC<BracketViewProps> = ({ format = 'single-elimi
     const grandFinalMatch = matches.find(m => m.bracketType === 'grand_final');
 
     return (
-      <div className="max-w-6xl mx-auto px-4 py-4 space-y-5">
+      <div ref={bracketRef} className="max-w-6xl mx-auto px-4 py-4 space-y-5">
         {/* Header Bracket */}
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 pb-1">
           <div>
@@ -39,15 +60,7 @@ export const BracketView: React.FC<BracketViewProps> = ({ format = 'single-elimi
               <h2 className="font-scoreboard text-xl font-bold tracking-tight text-slate-900 dark:text-white uppercase leading-none">
                 {TEKS.bracket.judul}
               </h2>
-              <button
-                type="button"
-                onClick={handleCopyBracket}
-                className="btn-pressable min-h-8 px-2 py-1 text-xs font-semibold rounded-lg border border-slate-200 dark:border-white/10 bg-white dark:bg-white/5 hover:bg-slate-50 dark:hover:bg-white/10 text-slate-700 dark:text-slate-300 flex items-center gap-1 transition-colors"
-                title="Salin bagan pertandingan"
-              >
-                <Copy className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400" />
-                <span>Salin</span>
-              </button>
+              {renderExportButton()}
             </div>
             <span className="text-xs text-slate-500 dark:text-slate-400 font-medium">
               Gugur ganda &bull; Pemain memiliki 2 kesempatan bermain
@@ -133,7 +146,7 @@ export const BracketView: React.FC<BracketViewProps> = ({ format = 'single-elimi
     const knockoutMatches = matches.filter(m => m.bracketType === 'knockout');
 
     return (
-      <div className="max-w-6xl mx-auto px-4 py-4 space-y-6">
+      <div ref={bracketRef} className="max-w-6xl mx-auto px-4 py-4 space-y-6">
         <div className="flex items-center justify-between">
           <div>
             <h2 className="font-scoreboard text-xl font-bold tracking-tight text-slate-900 dark:text-white uppercase leading-none">
@@ -143,15 +156,7 @@ export const BracketView: React.FC<BracketViewProps> = ({ format = 'single-elimi
               Fase grup & babak gugur semifinal silang hingga final
             </span>
           </div>
-          <button
-            type="button"
-            onClick={handleCopyBracket}
-            className="btn-pressable min-h-8 px-2.5 py-1 text-xs font-semibold rounded-lg border border-slate-200 dark:border-white/10 bg-white dark:bg-white/5 hover:bg-slate-50 dark:hover:bg-white/10 text-slate-700 dark:text-slate-300 flex items-center gap-1.5 transition-colors shrink-0"
-            title="Salin bagan pertandingan"
-          >
-            <Copy className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400" />
-            <span>Salin</span>
-          </button>
+          {renderExportButton()}
         </div>
 
         {/* Knockout Bracket */}
@@ -176,7 +181,7 @@ export const BracketView: React.FC<BracketViewProps> = ({ format = 'single-elimi
   // 3. FORMAT SISTEM GUGUR TUNGGAL (SINGLE ELIMINATION)
   if (format === 'single-elimination') {
     return (
-      <div className="max-w-6xl mx-auto px-4 py-4 space-y-4">
+      <div ref={bracketRef} className="max-w-6xl mx-auto px-4 py-4 space-y-4">
         <div className="flex items-center justify-between">
           <div>
             <h2 className="font-scoreboard text-xl font-bold tracking-tight text-slate-900 dark:text-white uppercase leading-none">
@@ -186,15 +191,7 @@ export const BracketView: React.FC<BracketViewProps> = ({ format = 'single-elimi
               Bagan eliminasi tunggal &bull; Geser horizontal untuk melihat bagan lengkap
             </span>
           </div>
-          <button
-            type="button"
-            onClick={handleCopyBracket}
-            className="btn-pressable min-h-8 px-2.5 py-1 text-xs font-semibold rounded-lg border border-slate-200 dark:border-white/10 bg-white dark:bg-white/5 hover:bg-slate-50 dark:hover:bg-white/10 text-slate-700 dark:text-slate-300 flex items-center gap-1.5 transition-colors shrink-0"
-            title="Salin bagan pertandingan"
-          >
-            <Copy className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400" />
-            <span>Salin</span>
-          </button>
+          {renderExportButton()}
         </div>
 
         <BracketTreeCanvas matches={matches} currentActiveMatch={currentActiveMatch} />
@@ -204,7 +201,7 @@ export const BracketView: React.FC<BracketViewProps> = ({ format = 'single-elimi
 
   // 4. FORMAT SEMUA LAWAN SEMUA (ROUND-ROBIN FIXTURE BOARD)
   return (
-    <div className="max-w-6xl mx-auto px-4 py-4 space-y-4">
+    <div ref={bracketRef} className="max-w-6xl mx-auto px-4 py-4 space-y-4">
       <div className="flex items-center justify-between">
         <div>
           <h2 className="font-scoreboard text-xl font-bold tracking-tight text-slate-900 dark:text-white uppercase leading-none">
@@ -214,15 +211,7 @@ export const BracketView: React.FC<BracketViewProps> = ({ format = 'single-elimi
             Bagan putaran pertandingan &bull; Geser horizontal untuk melihat putaran
           </span>
         </div>
-        <button
-          type="button"
-          onClick={handleCopyBracket}
-          className="btn-pressable min-h-8 px-2.5 py-1 text-xs font-semibold rounded-lg border border-slate-200 dark:border-white/10 bg-white dark:bg-white/5 hover:bg-slate-50 dark:hover:bg-white/10 text-slate-700 dark:text-slate-300 flex items-center gap-1.5 transition-colors shrink-0"
-          title="Salin bagan pertandingan"
-        >
-          <Copy className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400" />
-          <span>Salin</span>
-        </button>
+        {renderExportButton()}
       </div>
 
       <GroupMatchesBoard matches={matches} currentActiveMatch={currentActiveMatch} />

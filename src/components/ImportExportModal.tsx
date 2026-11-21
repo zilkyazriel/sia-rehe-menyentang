@@ -1,7 +1,7 @@
 import React, { useState, useRef } from 'react';
 import { Copy, Download, Upload, Check } from 'lucide-react';
 import type { TournamentState } from '../types/tournament';
-import { copyToClipboard, generateShareText, generateStandingsText, generateHeadToHeadText, generateBracketText } from '../utils/share';
+import { copyToClipboard, generateShareText } from '../utils/share';
 import { isValidTournamentState } from '../utils/storage';
 import { TEKS } from '../lib/teks';
 
@@ -139,78 +139,42 @@ export const ImportExportModal: React.FC<ImportExportModalProps> = ({
         {/* Tab Content */}
         <div className="flex-1 overflow-y-auto space-y-3 pr-0.5">
           {activeTab === 'export' ? (
-            <div className="space-y-2.5">
+            <div className="space-y-3">
               {!tournament ? (
                 <p className="text-xs text-slate-500 dark:text-slate-400 text-center py-4">
                   Turnamen belum dimulai. Belum ada data untuk diekspor.
                 </p>
               ) : (
                 <>
-                  {/* 1. Salin Hasil Lengkap */}
-                  <div className="p-3 rounded-xl border border-slate-200/80 dark:border-white/10 bg-slate-50/70 dark:bg-white/5 flex items-center justify-between gap-3">
-                    <div>
-                      <div className="text-xs font-bold text-slate-900 dark:text-white">Hasil Lengkap</div>
-                      <div className="text-[11px] text-slate-500 dark:text-slate-400">Ringkasan juara, bagan, & klasemen</div>
+                  {/* 1. Salin Ringkasan Hasil Teks */}
+                  <div className="p-3.5 rounded-2xl border border-slate-200/80 dark:border-white/10 bg-slate-50/70 dark:bg-white/5 space-y-2">
+                    <div className="flex items-center justify-between gap-2">
+                      <div>
+                        <div className="text-xs font-bold text-slate-900 dark:text-white">Salin Hasil Teks (WhatsApp)</div>
+                        <div className="text-[11px] text-slate-500 dark:text-slate-400">Ringkasan juara, klasemen, & head-to-head rapi</div>
+                      </div>
+                      <button
+                        type="button"
+                        onClick={() => handleCopy('all', generateShareText(tournament))}
+                        className="btn-pressable min-h-9 px-3 py-1.5 text-xs font-semibold rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white flex items-center gap-1.5 shrink-0"
+                      >
+                        {copiedKey === 'all' ? <Check className="w-3.5 h-3.5" /> : <Copy className="w-3.5 h-3.5" />}
+                        <span>{copiedKey === 'all' ? 'Tersalin' : 'Salin Teks'}</span>
+                      </button>
                     </div>
-                    <button
-                      type="button"
-                      onClick={() => handleCopy('all', generateShareText(tournament))}
-                      className="btn-pressable min-h-9 px-3 py-1.5 text-xs font-semibold rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white flex items-center gap-1.5 shrink-0"
-                    >
-                      {copiedKey === 'all' ? <Check className="w-3.5 h-3.5" /> : <Copy className="w-3.5 h-3.5" />}
-                      <span>{copiedKey === 'all' ? 'Tersalin' : 'Salin'}</span>
-                    </button>
                   </div>
 
-                  {/* 2. Salin Klasemen */}
-                  <div className="p-3 rounded-xl border border-slate-200/80 dark:border-white/10 bg-slate-50/70 dark:bg-white/5 flex items-center justify-between gap-3">
-                    <div>
-                      <div className="text-xs font-bold text-slate-900 dark:text-white">Klasemen</div>
-                      <div className="text-[11px] text-slate-500 dark:text-slate-400">Teks tabel klasemen peringkat</div>
+                  {/* 2. Informasi Ekspor Gambar */}
+                  <div className="p-3.5 rounded-2xl border border-emerald-500/20 bg-emerald-50/40 dark:bg-emerald-950/20 text-xs space-y-1">
+                    <div className="font-bold text-emerald-800 dark:text-emerald-300 flex items-center gap-1.5">
+                      <span>Simpan sebagai Gambar (PNG)</span>
                     </div>
-                    <button
-                      type="button"
-                      onClick={() => handleCopy('standings', generateStandingsText(tournament.config.players, tournament.matches))}
-                      className="btn-pressable min-h-9 px-3 py-1.5 text-xs font-semibold rounded-lg border border-slate-200 dark:border-white/10 bg-white dark:bg-white/5 hover:bg-slate-100 text-slate-800 dark:text-slate-200 flex items-center gap-1.5 shrink-0"
-                    >
-                      {copiedKey === 'standings' ? <Check className="w-3.5 h-3.5 text-emerald-500" /> : <Copy className="w-3.5 h-3.5" />}
-                      <span>{copiedKey === 'standings' ? 'Tersalin' : 'Salin'}</span>
-                    </button>
+                    <p className="text-[11px] text-slate-600 dark:text-slate-300 leading-relaxed">
+                      Untuk menyimpan Klasemen, Head-to-Head, atau Bagan sebagai gambar PNG/JPG, buka tab <b>Bracket</b> atau <b>Klasemen</b> lalu tekan tombol <b>"Gambar PNG"</b> di sudut tabel.
+                    </p>
                   </div>
 
-                  {/* 3. Salin Head-to-Head */}
-                  <div className="p-3 rounded-xl border border-slate-200/80 dark:border-white/10 bg-slate-50/70 dark:bg-white/5 flex items-center justify-between gap-3">
-                    <div>
-                      <div className="text-xs font-bold text-slate-900 dark:text-white">Head-to-Head</div>
-                      <div className="text-[11px] text-slate-500 dark:text-slate-400">Rekor pertemuan antar pemain</div>
-                    </div>
-                    <button
-                      type="button"
-                      onClick={() => handleCopy('h2h', generateHeadToHeadText(tournament.config.players, tournament.matches))}
-                      className="btn-pressable min-h-9 px-3 py-1.5 text-xs font-semibold rounded-lg border border-slate-200 dark:border-white/10 bg-white dark:bg-white/5 hover:bg-slate-100 text-slate-800 dark:text-slate-200 flex items-center gap-1.5 shrink-0"
-                    >
-                      {copiedKey === 'h2h' ? <Check className="w-3.5 h-3.5 text-emerald-500" /> : <Copy className="w-3.5 h-3.5" />}
-                      <span>{copiedKey === 'h2h' ? 'Tersalin' : 'Salin'}</span>
-                    </button>
-                  </div>
-
-                  {/* 4. Salin Bagan / Bracket */}
-                  <div className="p-3 rounded-xl border border-slate-200/80 dark:border-white/10 bg-slate-50/70 dark:bg-white/5 flex items-center justify-between gap-3">
-                    <div>
-                      <div className="text-xs font-bold text-slate-900 dark:text-white">Bagan Pertandingan</div>
-                      <div className="text-[11px] text-slate-500 dark:text-slate-400">Daftar match dan pemenang babak</div>
-                    </div>
-                    <button
-                      type="button"
-                      onClick={() => handleCopy('bracket', generateBracketText(tournament.matches, tournament.config.format))}
-                      className="btn-pressable min-h-9 px-3 py-1.5 text-xs font-semibold rounded-lg border border-slate-200 dark:border-white/10 bg-white dark:bg-white/5 hover:bg-slate-100 text-slate-800 dark:text-slate-200 flex items-center gap-1.5 shrink-0"
-                    >
-                      {copiedKey === 'bracket' ? <Check className="w-3.5 h-3.5 text-emerald-500" /> : <Copy className="w-3.5 h-3.5" />}
-                      <span>{copiedKey === 'bracket' ? 'Tersalin' : 'Salin'}</span>
-                    </button>
-                  </div>
-
-                  {/* 5. Unduh JSON */}
+                  {/* 3. Unduh File Cadangan JSON */}
                   <div className="pt-1">
                     <button
                       type="button"

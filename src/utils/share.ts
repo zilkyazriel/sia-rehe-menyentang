@@ -25,35 +25,25 @@ export async function copyToClipboard(text: string): Promise<boolean> {
 }
 
 /**
- * Teks tabel Klasemen
+ * Format teks Klasemen rapi untuk dibagikan (WhatsApp / Catatan)
  */
 export function generateStandingsText(players: Player[], matches: Match[], title = 'Klasemen'): string {
   const standings = calculateStandings(players, matches);
-  let text = `SIA REHE MENYENTANG - ${title.toUpperCase()}\n`;
-  text += `------------------------------------\n`;
-  text += `#   Pemain         M  W  L  +/- PTS\n`;
-  text += `------------------------------------\n`;
+  let text = `*SIA REHE MENYENTANG - ${title.toUpperCase()}*\n`;
   standings.forEach(s => {
-    const pos = (s.isTied ? `T${s.rank}` : `${s.rank}.`).padEnd(3, ' ');
-    const name = s.playerName.padEnd(14, ' ').slice(0, 14);
-    const m = String(s.played).padStart(2, ' ');
-    const w = String(s.won).padStart(2, ' ');
-    const l = String(s.lost).padStart(2, ' ');
-    const diff = (s.difference > 0 ? `+${s.difference}` : `${s.difference}`).padStart(4, ' ');
-    const pts = String(s.points).padStart(3, ' ');
-    text += `${pos} ${name} ${m} ${w} ${l} ${diff} ${pts}\n`;
+    const rankLabel = s.isTied ? `T${s.rank}.` : `${s.rank}.`;
+    const diffStr = s.difference > 0 ? `+${s.difference}` : `${s.difference}`;
+    text += `${rankLabel} ${s.playerName} | ${s.played} Main | ${s.won}W - ${s.lost}L | (${diffStr}) | ${s.points} Poin\n`;
   });
-  text += `------------------------------------\n`;
   return text.trim();
 }
 
 /**
- * Teks matriks Head-to-Head
+ * Format teks Head-to-Head rapi untuk dibagikan
  */
 export function generateHeadToHeadText(players: Player[], matches: Match[]): string {
   const matrix = buildHeadToHeadMatrix(players, matches);
-  let text = `SIA REHE MENYENTANG - HEAD-TO-HEAD\n`;
-  text += `====================================\n`;
+  let text = `*SIA REHE MENYENTANG - HEAD-TO-HEAD*\n`;
   for (let i = 0; i < matrix.players.length; i++) {
     for (let j = i + 1; j < matrix.players.length; j++) {
       const p1 = matrix.players[i];
@@ -61,21 +51,20 @@ export function generateHeadToHeadText(players: Player[], matches: Match[]): str
       const rec1 = matrix.results[p1.id]?.[p2.id] || { won: 0, lost: 0 };
       const total = rec1.won + rec1.lost;
       if (total > 0) {
-        text += `${p1.name} ${rec1.won} - ${rec1.lost} ${p2.name}\n`;
+        text += `• ${p1.name} ${rec1.won} - ${rec1.lost} ${p2.name}\n`;
       } else {
-        text += `${p1.name} vs ${p2.name}: Belum tanding\n`;
+        text += `• ${p1.name} vs ${p2.name}: Belum tanding\n`;
       }
     }
   }
-  text += `====================================\n`;
   return text.trim();
 }
 
 /**
- * Teks susunan dan hasil Bagan / Bracket
+ * Format teks Bagan / Bracket rapi untuk dibagikan
  */
 export function generateBracketText(matches: Match[], format?: TournamentFormat): string {
-  let text = `SIA REHE MENYENTANG - BAGAN PERTANDINGAN\n`;
+  let text = `*SIA REHE MENYENTANG - BAGAN PERTANDINGAN*\n`;
   if (format) {
     let fName = 'Sistem Gugur';
     if (format === 'double-elimination') fName = 'Gugur Ganda';
@@ -83,7 +72,6 @@ export function generateBracketText(matches: Match[], format?: TournamentFormat)
     else if (format === 'round-robin') fName = 'Semua Lawan Semua';
     text += `Format: ${fName}\n`;
   }
-  text += `====================================\n`;
 
   const activeMatches = matches.filter(m => !m.isBye);
   activeMatches.forEach(m => {
@@ -92,17 +80,16 @@ export function generateBracketText(matches: Match[], format?: TournamentFormat)
     const pB = m.playerBName || 'TBD';
     if (m.status === 'completed') {
       const winnerName = m.winnerId === m.playerAId ? pA : pB;
-      text += `[#${m.matchNumber}] ${roundLabel}: ${pA} vs ${pB} -> Pemenang: ${winnerName}\n`;
+      text += `• #${m.matchNumber} (${roundLabel}): ${pA} vs ${pB} -> Pemenang: ${winnerName}\n`;
     } else {
-      text += `[#${m.matchNumber}] ${roundLabel}: ${pA} vs ${pB} (Belum main)\n`;
+      text += `• #${m.matchNumber} (${roundLabel}): ${pA} vs ${pB} (Belum main)\n`;
     }
   });
-  text += `====================================\n`;
   return text.trim();
 }
 
 /**
- * Ringkasan teks hasil lengkap turnamen
+ * Ringkasan teks lengkap hasil turnamen (WhatsApp Friendly, tidak berantakan)
  */
 export function generateShareText(state: TournamentState): string {
   const { config, matches } = state;
@@ -128,14 +115,35 @@ export function generateShareText(state: TournamentState): string {
     text += `\n`;
   }
 
-  // Tambahkan Klasemen atau Bagan sesuai format
   if (config.format === 'round-robin') {
-    text += generateStandingsText(config.players, matches) + '\n\n';
-    text += generateHeadToHeadText(config.players, matches) + '\n';
-  } else if (config.format === 'group-stage-knockout') {
-    text += generateBracketText(matches, config.format) + '\n';
+    text += `KLASEMEN:\n`;
+    const standings = calculateStandings(config.players, matches);
+    standings.forEach(s => {
+      const rankLabel = s.isTied ? `T${s.rank}.` : `${s.rank}.`;
+      const diffStr = s.difference > 0 ? `+${s.difference}` : `${s.difference}`;
+      text += `${rankLabel} ${s.playerName} | ${s.played} Main | ${s.won}W - ${s.lost}L | (${diffStr}) | ${s.points} Poin\n`;
+    });
+    text += `\nHEAD-TO-HEAD:\n`;
+    const matrix = buildHeadToHeadMatrix(config.players, matches);
+    for (let i = 0; i < matrix.players.length; i++) {
+      for (let j = i + 1; j < matrix.players.length; j++) {
+        const p1 = matrix.players[i];
+        const p2 = matrix.players[j];
+        const rec1 = matrix.results[p1.id]?.[p2.id] || { won: 0, lost: 0 };
+        const total = rec1.won + rec1.lost;
+        if (total > 0) {
+          text += `• ${p1.name} ${rec1.won} - ${rec1.lost} ${p2.name}\n`;
+        }
+      }
+    }
   } else {
-    text += generateBracketText(matches, config.format) + '\n';
+    text += `BAGAN PERTANDINGAN:\n`;
+    matches
+      .filter(m => !m.isBye && m.status === 'completed')
+      .forEach(m => {
+        const winnerName = m.winnerId === m.playerAId ? m.playerAName : m.playerBName;
+        text += `• #${m.matchNumber} (${m.roundName || 'Match'}): ${m.playerAName} vs ${m.playerBName} -> Pemenang: ${winnerName}\n`;
+      });
   }
 
   return text.trim();
