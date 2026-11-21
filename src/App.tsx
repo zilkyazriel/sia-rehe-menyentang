@@ -98,7 +98,7 @@ export function App() {
 
   return (
     <div
-      className={`min-h-dvh flex flex-col font-sans transition-colors duration-200 overflow-x-hidden ${
+      className={`min-h-dvh flex flex-col font-sans transition-colors duration-200 overflow-x-clip ${
         theme === 'dark'
           ? 'dark bg-[#090e0c] text-slate-100'
           : 'light bg-[#f4f6f5] text-slate-800'
