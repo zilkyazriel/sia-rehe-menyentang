@@ -1,9 +1,9 @@
 import { toPng } from 'html-to-image';
 
 /**
- * Ekspor elemen HTML menjadi gambar PNG utuh berkualitas tinggi (Retina 2x).
- * Menangani elemen dengan scroll horizontal (bracket lebar, tabel klasemen & H2H)
- * sehingga SELURUH konten dari kiri sampai kanan tertangkap penuh tanpa terpotong!
+ * Ekspor elemen HTML menjadi gambar PNG utuh berkualitas tinggi.
+ * Menangani elemen dengan scroll horizontal (bracket panjang, tabel klasemen & H2H)
+ * dan membatasi ukuran canvas agar tidak melebihi limit memori browser HP (mencegah gambar putih/blank).
  */
 export async function exportElementAsImage(
   element: HTMLElement,
@@ -16,20 +16,30 @@ export async function exportElementAsImage(
   const subtextColor = isDark ? '#94a3b8' : '#64748b';
   const borderColor = isDark ? 'rgba(255, 255, 255, 0.1)' : '#e2e8f0';
 
-  // 1. Buat off-screen clone container tanpa batasan layar HP
-  const container = document.createElement('div');
-  container.className = isDark ? 'dark' : 'light';
-  container.style.position = 'fixed';
-  container.style.left = '-99999px';
-  container.style.top = '0';
-  container.style.width = 'max-content';
-  container.style.maxWidth = 'none';
-  container.style.zIndex = '-99999';
-  container.style.backgroundColor = bgColor;
-  container.style.color = textColor;
-  container.style.padding = '24px';
-  container.style.borderRadius = '20px';
-  container.style.fontFamily = "'Plus Jakarta Sans', system-ui, sans-serif";
+  // 1. Wrapper tersembunyi di pojok DOM tanpa merusak koordinat canvas
+  const wrapper = document.createElement('div');
+  wrapper.style.position = 'fixed';
+  wrapper.style.top = '0';
+  wrapper.style.left = '0';
+  wrapper.style.width = '0';
+  wrapper.style.height = '0';
+  wrapper.style.overflow = 'hidden';
+  wrapper.style.zIndex = '-99999';
+  wrapper.style.pointerEvents = 'none';
+
+  // 2. Kartu ekspor yang akan difoto (memakai position relative, bukan fixed)
+  const exportCard = document.createElement('div');
+  exportCard.className = isDark ? 'dark' : 'light';
+  exportCard.style.position = 'relative';
+  exportCard.style.left = '0';
+  exportCard.style.top = '0';
+  exportCard.style.width = 'max-content';
+  exportCard.style.maxWidth = 'none';
+  exportCard.style.backgroundColor = bgColor;
+  exportCard.style.color = textColor;
+  exportCard.style.padding = '24px';
+  exportCard.style.borderRadius = '20px';
+  exportCard.style.fontFamily = "'Plus Jakarta Sans', system-ui, sans-serif";
 
   // Header branding pada gambar hasil ekspor
   const headerBrand = document.createElement('div');
@@ -52,9 +62,9 @@ export async function exportElementAsImage(
       ${new Date().toLocaleDateString('id-ID', { day: 'numeric', month: 'short', year: 'numeric' })}
     </div>
   `;
-  container.appendChild(headerBrand);
+  exportCard.appendChild(headerBrand);
 
-  // 2. Clone elemen yang ingin diekspor
+  // 3. Clone elemen target
   const clone = element.cloneNode(true) as HTMLElement;
 
   // Hapus semua tombol atau kontrol aksi dengan class 'no-export'
@@ -80,22 +90,30 @@ export async function exportElementAsImage(
   clone.style.overflow = 'visible';
   clone.style.maxWidth = 'none';
   clone.style.width = 'max-content';
-  container.appendChild(clone);
+  exportCard.appendChild(clone);
 
-  document.body.appendChild(container);
+  wrapper.appendChild(exportCard);
+  document.body.appendChild(wrapper);
 
   try {
     // Hitung dimensi sebenarnya dari konten yang sudah dibuka penuh
-    const fullWidth = Math.max(container.scrollWidth, container.offsetWidth, 560);
-    const fullHeight = Math.max(container.scrollHeight, container.offsetHeight);
+    const targetWidth = Math.max(exportCard.scrollWidth, exportCard.offsetWidth, 560);
+    const targetHeight = Math.max(exportCard.scrollHeight, exportCard.offsetHeight);
 
-    const dataUrl = await toPng(container, {
-      quality: 0.98,
-      pixelRatio: 2,
+    // Keamanan memori canvas di HP: batasi resolusi maksimal 3000px agar browser HP tidak kehabisan memori canvas
+    const maxDimension = Math.max(targetWidth, targetHeight);
+    let pixelRatio = 2;
+    if (maxDimension * pixelRatio > 3000) {
+      pixelRatio = Math.max(1, Math.min(2, 3000 / maxDimension));
+    }
+
+    const dataUrl = await toPng(exportCard, {
+      quality: 0.95,
+      pixelRatio,
       backgroundColor: bgColor,
-      width: fullWidth,
-      height: fullHeight,
-      cacheBust: true,
+      width: targetWidth,
+      height: targetHeight,
+      cacheBust: false,
     });
 
     // Coba Web Share API jika didukung di HP (langsung share ke WhatsApp/Galeri)
@@ -131,6 +149,8 @@ export async function exportElementAsImage(
     console.error('Gagal mengekspor gambar:', err);
     return false;
   } finally {
-    document.body.removeChild(container);
+    if (document.body.contains(wrapper)) {
+      document.body.removeChild(wrapper);
+    }
   }
 }
